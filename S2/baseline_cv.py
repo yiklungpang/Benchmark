@@ -68,6 +68,9 @@ class Tracker:
 		self.cam1_state = "wait"
 		self.cam2_state = "wait"
 
+		self.img1 = None
+		self.img2 = None
+
 		self.cam1 = dict.fromkeys(['rgb'])
 		self.cam2 = dict.fromkeys(['rgb'])
 
@@ -131,10 +134,16 @@ class Tracker:
 
 					self.cam1_state = "ready"
 					rospy.loginfo('Camera 1 ready!')
+
+					# Track in 2D
+					self.img1 = self.track1.run(self.cam1['rgb'], 'track')
 				else:
 					return
 			except:
 				return
+		else:
+			# Track in 2D
+			self.img1 = self.track1.run(self.cam1['rgb'], 'track')
 
 		self.fr1 += 1
 
@@ -173,10 +182,16 @@ class Tracker:
 
 					self.cam2_state = "ready"
 					rospy.loginfo('Camera 2 ready!')
+
+					# Track in 2D
+					self.img2 = self.track2.run(self.cam2['rgb'], 'track')
 				else:
 					return
 			except:
 				return
+		else:
+			# Track in 2D
+			self.img2 = self.track2.run(self.cam2['rgb'], 'track')
 				
 		self.fr2 += 1
 	
@@ -242,7 +257,7 @@ class Tracker:
 		wt = LA.norm(wb - wm) + wm
 		h = (h_c1+h_c2)/2
 
-		print('\nEstimated object dimenions: w_t={:.0f}mm, w_b={:.0f}mm, h={:.0f}mm\n'.format(wt*1000, wb*1000, h*1000))
+		rospy.loginfo('\nEstimated object dimenions: w_t={:.0f}mm, w_b={:.0f}mm, h={:.0f}mm\n'.format(wt*1000, wb*1000, h*1000))
 		self.glass.w = wm
 		self.glass.h = h
 
@@ -264,27 +279,24 @@ class Tracker:
 		rospy.loginfo('Estimating object dimensions...')
 		self.getObjectDimensions()
 
+		# Publish initial location
+		self.initial_locationPub.publish(self.initial_state)
+
 		rate = rospy.Rate(30)
 		while not rospy.is_shutdown():
 
-			# Track in 2D
-			img1 = self.track1.run(self.cam1['rgb'], 'track')
-			img2 = self.track2.run(self.cam2['rgb'], 'track')
-
 			# Triangulate to get 3D centroid
-			self.glass, img1, img2 = get3D(self.c1, self.c2, self.track1.mask, self.track2.mask, self.glass, img1, img2, drawCentroid=True, drawDimensions=False)
+			self.glass, self.img1, self.img2 = get3D(self.c1, self.c2, self.track1.mask, self.track2.mask, self.glass, self.img1, self.img2, drawCentroid=True, drawDimensions=False)
 
 			# ROS publish results
-			self.pub1.publish(self.cvBridge.cv2_to_imgmsg(img1, encoding="passthrough"))
-			self.pub2.publish(self.cvBridge.cv2_to_imgmsg(img2, encoding="passthrough"))
+			self.pub1.publish(self.cvBridge.cv2_to_imgmsg(self.img1, encoding="passthrough"))
+			self.pub2.publish(self.cvBridge.cv2_to_imgmsg(self.img2, encoding="passthrough"))
 
 			########### 
 			# PUBLISH #
 			###########
 			# Change refence system from cameras to robot
 			self.glass.centroid = np.matmul(self.camera_robot_transformation, np.append(self.glass.centroid, 1.).reshape(4,1))
-
-			self.initial_locationPub.publish(self.initial_state)
 
 			# 3D marker message
 			self.state.pose.position.x = self.glass.centroid[0,0]
@@ -296,8 +308,8 @@ class Tracker:
 			self.markerPub.publish(self.state)
 
 			if self.args.record:
-				cv2.imwrite('./data/record/c1_track_{}.png'.format(self.fr1), img1)
-				cv2.imwrite('./data/record/c2_track_{}.png'.format(self.fr2), img2)
+				cv2.imwrite('./data/record/c1_track_{}.png'.format(self.fr1), self.img1)
+				cv2.imwrite('./data/record/c2_track_{}.png'.format(self.fr2), self.img2)
 				
 			rate.sleep()
 
@@ -305,11 +317,11 @@ class Tracker:
 		
 
 if __name__ == '__main__':
-	print('Initialising:')
-	print('Python {}.{}'.format(sys.version_info[0], sys.version_info[1]))
-	print('OpenCV {}'.format(cv2.__version__))
-	print('PyTorch {}'.format(torch.__version__))
-	print('Torchvision {}'.format(torchvision.__version__))
+	rospy.loginfo('Initialising:')
+	rospy.loginfo('Python {}.{}'.format(sys.version_info[0], sys.version_info[1]))
+	rospy.loginfo('OpenCV {}'.format(cv2.__version__))
+	rospy.loginfo('PyTorch {}'.format(torch.__version__))
+	rospy.loginfo('Torchvision {}'.format(torchvision.__version__))
 
 	# Parse arguments
 	parser = argparse.ArgumentParser()

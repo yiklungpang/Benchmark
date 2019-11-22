@@ -6,6 +6,7 @@
 #
 # Requires camera calibration (see the rest of the project for example calibration)
 
+import copy
 import numpy as np
 import cv2
 import cv2.aruco as aruco
@@ -57,15 +58,20 @@ def getCalibrationFrame():
             #return cv2.undistort(img, cameraMatrix, distCoeffs)
 
 
-
-def estimatePoseToBoard(_img, cameraMatrix, distCoeffs):
-
-    img = _img.copy()
+def detectCharucoMarkers(_img):
+    img = copy.deepcopy(_img)
 
     # grayscale image
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     # Detect Aruco markers
     corners, ids, rejectedImgPoints = aruco.detectMarkers(gray, ARUCO_DICT, parameters=ARUCO_PARAMETERS)
+
+    return corners, ids, rejectedImgPoints
+
+
+def estimatePoseToBoard(_img, cameraMatrix, distCoeffs, corners, ids, rejectedImgPoints):
+
+    img = copy.deepcopy(_img)
 
     # Refine detected markers
     # Eliminates markers not part of our board, adds missing markers to the board
@@ -109,19 +115,14 @@ def estimatePoseToBoard(_img, cameraMatrix, distCoeffs):
 
     else:
         print('Calibration board is not fully visible')
-        assert 1==0
+        exit()
 
     return cv2.Rodrigues(rvec)[0], tvec
 
 
-def estimatePoseToMarker(_img, cameraMatrix, distCoeffs):
+def estimatePoseToMarker(_img, cameraMatrix, distCoeffs, corners, ids, rejectedImgPoints):
 
-    img = _img.copy()
-
-    # grayscale image
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    # Detect Aruco markers
-    corners, ids, rejectedImgPoints = aruco.detectMarkers(gray, ARUCO_DICT, parameters=ARUCO_PARAMETERS)
+    img = copy.deepcopy(_img)
 
     ## Keep ID 49 (the robot marker)
     corners, ids = keepMarkerById(corners, ids, 49)
@@ -182,8 +183,9 @@ if __name__ == '__main__':
     img = getCalibrationFrame()
     #cv2.imwrite('robot-cameras-calibration.png', img)
 
-    rvec_board, tvec_board = estimatePoseToBoard(img, cameraMatrix, distCoeffs)
-    rvec_marker, tvec_marker = estimatePoseToMarker(img, cameraMatrix, distCoeffs)
+    corners, ids, rejectedImgPoints = detectCharucoMarkers(img)
+    rvec_board, tvec_board = estimatePoseToBoard(img, cameraMatrix, distCoeffs, corners, ids, rejectedImgPoints)
+    rvec_marker, tvec_marker = estimatePoseToMarker(img, cameraMatrix, distCoeffs, corners, ids, rejectedImgPoints)
 
     # Manual measurements between marker and robot
     r = np.eye(3, dtype=float)

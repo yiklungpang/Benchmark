@@ -82,7 +82,10 @@ class MoveRobot(object):
 		self.position = None
 		self.ready = False
 
-		self.gripper_topic = 'Robotiq2FGripperRobotOutput'
+		self.gripper_topic_request = 'Robotiq2FGripperRobotOutput'
+		self.gripper_topic_status = 'Robotiq2FGripperRobotInput'
+
+		self.gripper_pos = None
 
 		# Initial pose
 		self.pose_initial = geometry_msgs.msg.Pose()
@@ -105,7 +108,6 @@ class MoveRobot(object):
 
 	def callback(self, data):
 
-		self.ready = False
 		self.glass = data
 
 		#Fix orientation
@@ -127,6 +129,10 @@ class MoveRobot(object):
 		self.pose_delivery.pose.orientation.y = -0.724833773664
 		self.pose_delivery.pose.orientation.z = -0.0213073239923
 		self.pose_delivery.pose.orientation.w = 0.0015946800291
+
+	def callbackGripperStatus(self, data):
+
+		self.gripper_pos = data.gPO
 		
  	def go_to_relative(self, _goal, x=0, y=0, z=0, thr=0.01):
  		goal = copy.deepcopy(_goal)
@@ -190,7 +196,7 @@ class MoveRobot(object):
 		self.gripper_msg.rSP = 255
 		self.gripper_msg.rPR = 0	#open gripper
 		self.gripper_msg.rFR = 150
-		self.gripper_msg.rPR = 128
+		self.gripper_msg.rPR = 128  #??
 		self.pub_gripper.publish(self.gripper_msg)
 		#rospy.sleep(0.1)
 
@@ -201,6 +207,8 @@ class MoveRobot(object):
 		self.gripper_msg.rPR = max(0, min(255, int(-3*distance+255)))
 		self.pub_gripper.publish(self.gripper_msg)
 		#rospy.sleep(0.1)
+		while abs(self.gripper_pos - self.gripper_msg.rPR) >= 15:
+			continue
 
 	def openGripper(self):
 		#0: open
@@ -208,11 +216,14 @@ class MoveRobot(object):
 		self.gripper_msg.rPR = 0
 		self.pub_gripper.publish(self.gripper_msg)
 		#rospy.sleep(0.1)
+		while abs(self.gripper_pos - self.gripper_msg.rPR) >= 15:
+			continue
 
 	def run(self):
 			
 		rospy.Subscriber(self.topic, Marker, self.callback)
 		rospy.Subscriber('initialLocation', Marker, self.callbackInitial)
+		rospy.Subscriber(self.gripper_topic_status, inputMsg_gripper.Robotiq2FGripper_robot_input, self.callbackGripperStatus)
 
 		rate = rospy.Rate(200)
 		self.group.allow_replanning(True)
@@ -220,12 +231,12 @@ class MoveRobot(object):
 		#self.group.set_planner_id("SBLkConfigDefault")
 
 		# Gripper
-		self.pub_gripper = rospy.Publisher(self.gripper_topic, outputMsg_gripper.Robotiq2FGripper_robot_output)
+		self.pub_gripper = rospy.Publisher(self.gripper_topic_request, outputMsg_gripper.Robotiq2FGripper_robot_output)
 
 		self.gripper_msg = outputMsg_gripper.Robotiq2FGripper_robot_output()
 		self.initGripper()
 
-		print('Move to initial pose')
+		rospy.loginfo('Move to initial pose')
 		mode = 'init'
 		while not rospy.is_shutdown():
 
@@ -245,7 +256,7 @@ class MoveRobot(object):
 
 					time = rospy.get_rostime()
 					self.savedTimeB = time.secs*10**3 + (time.nsecs/10**6)	# in ms
-					print('Grabbing glass at {}ms'.format(self.savedTimeB))
+					rospy.loginfo('Grabbing glass at {}ms'.format(self.savedTimeB))
 
 
 			elif mode == 'delivery':
@@ -253,7 +264,7 @@ class MoveRobot(object):
 					self.openGripper()
 					time = rospy.get_rostime()
 					self.savedTimeD = time.secs*10**3 + (time.nsecs/10**6)	# in ms
-					print('Completed at {}ms'.format(self.savedTimeD))
+					rospy.loginfo('Completed at {}ms'.format(self.savedTimeD))
 					mode = 'completing'
 
 			elif mode == 'completing':
