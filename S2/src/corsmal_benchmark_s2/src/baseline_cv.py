@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # System libs
 import glob
 import sys
@@ -87,18 +89,20 @@ class Tracker:
 
 		self.initial_location = None
 
+		self.package_path = rospack.get_path('corsmal_benchmark_s2')
+
 		# Load object detection model
 		self.detectionModel = torchvision.models.detection.maskrcnn_resnet50_fpn(num_classes=3)
-		self.detectionModel.load_state_dict(torch.load('./data/models/coco_maskrcnn_resnet50_fpn_2cat.pth', map_location='cpu'))
+		self.detectionModel.load_state_dict(torch.load(self.package_path+'/data/models/coco_maskrcnn_resnet50_fpn_2cat.pth', map_location='cpu'))
 		self.detectionModel.eval()
 		self.detectionModel.cuda()
 
 		# Remove conten from out/record directory
 		if self.args.record:
-			if os.path.exists('./data/record'):
-				shutil.rmtree('./data/record')
-			if not os.path.exists('./data/record'):
-				os.makedirs('./data/record')
+			if os.path.exists(self.package_path+'/data/record'):
+				shutil.rmtree(self.package_path+'/data/record')
+			if not os.path.exists(self.package_path+'/data/record'):
+				os.makedirs(self.package_path+'/data/record')
 
 
 	def cam1_callback(self, data):
@@ -267,7 +271,7 @@ class Tracker:
 		self.init_ros_topics()
 		
 		# Read file to calibrate camera to robot
-		f = open('./data/calibration/cameras_robot.pckl', 'rb')
+		f = open(self.package_path+'/data/calibration/cameras_robot.pckl', 'rb')
 		self.camera_robot_transformation = pickle.load(f)
 		f.close()
 
@@ -308,8 +312,8 @@ class Tracker:
 			self.markerPub.publish(self.state)
 
 			if self.args.record:
-				cv2.imwrite('./data/record/c1_track_{}.png'.format(self.fr1), self.img1)
-				cv2.imwrite('./data/record/c2_track_{}.png'.format(self.fr2), self.img2)
+				cv2.imwrite(self.package_path+'/data/record/c1_track_{}.png'.format(self.fr1), self.img1)
+				cv2.imwrite(self.package_path+'/data/record/c2_track_{}.png'.format(self.fr2), self.img2)
 				
 			rate.sleep()
 

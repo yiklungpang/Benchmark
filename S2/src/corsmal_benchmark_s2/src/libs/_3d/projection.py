@@ -90,7 +90,7 @@ class projection:
 																													distCoeffs=self.distCoeffs)
 				if draw:
 					imgs[sensor] = aruco.drawAxis(imgs[sensor], self.intrinsic[sensor], self.distCoeffs, self.extrinsic[sensor]['rvec'], self.extrinsic[sensor]['tvec'], 2)
-					cv2.imwrite('./data/out/calib_C{}_{}.png'.format(self.camId,sensor), imgs[sensor])
+					cv2.imwrite(rospack.get_path('corsmal_benchmark_s2')+'/data/out/calib_C{}_{}.png'.format(self.camId,sensor), imgs[sensor])
 		else:
 			print('Calibration board is not fully visible for C{} sensor: {}'.format(self.camId, sensor))
 			assert 1==0
@@ -249,4 +249,4 @@ def getObjectDimensions(cam, _seg, _img, centroid, offset, atHeight, draw=False)
 				return radius*2, h
 			
 			if draw:
-				cv2.imwrite('./data/out/measuring_C{}_rad{:.5f}.png'.format(cam.camId, radius), img)
+				cv2.imwrite(rospack.get_path('corsmal_benchmark_s2')+'/data/out/measuring_C{}_rad{:.5f}.png'.format(cam.camId, radius), img)

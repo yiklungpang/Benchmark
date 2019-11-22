@@ -1,0 +1,8 @@
+prefix=/home/yiklungpang/Benchmark/S2/install
+
+Name: corsmal_benchmark_s2
+Description: Description of corsmal_benchmark_s2
+Version: 0.0.0
+Cflags: 
+Libs: -L/home/yiklungpang/Benchmark/S2/install/lib 
+Requires: 

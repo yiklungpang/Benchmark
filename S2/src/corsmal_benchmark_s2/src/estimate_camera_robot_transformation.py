@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # The following code is used to watch a video stream, detect Aruco markers, and use
 # a set of markers to determine the posture of the camera in relation to the plane
 # of markers.
@@ -28,7 +30,8 @@ CHARUCO_BOARD = aruco.CharucoBoard_create(squaresX=10,
 
 def readCameraCalibration():
     # Check for camera calibration data
-    f = open('data/calibration/Logitech/C1.pckl', 'rb')
+    f_path = os.path.join(os.path.split(os.path.dirname(__file__))[0], 'data/calibration/Logitech/C1.pckl')
+    f = open(f_path, 'rb')
     (cameraMatrix, distCoeffs, _, _) = pickle.load(f)
     f.close()
     if cameraMatrix is None or distCoeffs is None:
@@ -216,7 +219,8 @@ if __name__ == '__main__':
 
        
     # Dump projection matrix to file
-    f = open('data/calibration/cameras_robot.pckl', 'wb')
+    f_path = os.path.join(os.path.split(os.path.dirname(__file__))[0], 'data/calibration/cameras_robot.pckl')
+    f = open(f_path, 'wb')
     pickle.dump((C), f)
     f.close()
 

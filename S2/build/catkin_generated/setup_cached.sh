@@ -8,6 +8,7 @@
 
 # modified environment variables
 export CMAKE_PREFIX_PATH="/home/yiklungpang/Benchmark/S2/devel:$CMAKE_PREFIX_PATH"
+export LD_LIBRARY_PATH="/home/yiklungpang/Benchmark/S2/devel/lib:$LD_LIBRARY_PATH"
 export PWD="/home/yiklungpang/Benchmark/S2/build"
 export ROSLISP_PACKAGE_DIRECTORIES="/home/yiklungpang/Benchmark/S2/devel/share/common-lisp"
 export ROS_PACKAGE_PATH="/home/yiklungpang/Benchmark/S2/src:$ROS_PACKAGE_PATH"

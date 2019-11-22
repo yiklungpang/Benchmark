@@ -1,7 +1,7 @@
 import numpy as np
 import copy
 import cv2
-
+import rospy
 
 COCO_INSTANCE_CATEGORY_NAMES = ['__background__', 'wine_glass', 'cup']
 
@@ -39,7 +39,7 @@ def postProcessingDetection(camId, _img, output, ir=1, draw=False):
 			img = 0.5* img + 0.5*seg
 			#img[:, :, 1] = (seg.squeeze() > 0) * 255 + (seg.squeeze() == 0) * img[:, :, 1]
 
-			cv2.imwrite('./data/out/seg_C{}_ir{}.png'.format(camId, ir), img)
+			cv2.imwrite(rospack.get_path('corsmal_benchmark_s2')+'/data/out/seg_C{}_ir{}.png'.format(camId, ir), img)
 		return np.array(ROI).astype(int), seg, points, img
 	
 	else:
