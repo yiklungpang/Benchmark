@@ -1,0 +1,2 @@
+
+-DCATKIN_DEVEL_PREFIX=/home/yiklungpang/Benchmark/S2/devel -DCMAKE_INSTALL_PREFIX=/home/yiklungpang/Benchmark/S2/install -G Unix Makefiles
